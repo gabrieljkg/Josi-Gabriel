@@ -831,13 +831,15 @@ export default function App() {
                     <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -ml-16 -mb-16"></div>
                     
                     <h2 className="text-4xl md:text-5xl font-melinda text-brand-ink mb-8 text-center relative z-10">Nossa História</h2>
-                    <div className="space-y-6 text-slate-600 leading-relaxed font-light text-center relative z-10">
-                      <p>
-                        Esta etapa não é apenas a união de duas pessoas, mas o encontro de propósitos traçados muito antes de nos conhecermos. É a celebração do amor paciente, da amizade sincera e da vontade de construir uma família.
-                      </p>
-                      <p>
-                        Agradecemos a cada um de vocês que fez parte da nossa caminhada. Vocês são testemunhas do nosso amor e, agora, celebrarão conosco o dia em que diremos "sim" para o começo de um para sempre.
-                      </p>
+                    <div className="space-y-6 text-slate-600 leading-relaxed font-light text-center relative z-10 text-sm md:text-base">
+                      <p>Nossa história começou muito antes do nosso primeiro encontro. Deus, em Sua bondade, escreveu cada detalhe do nosso caminho e nos uniu no tempo certo.</p>
+                      <p>Uma certeza silenciosa de que deveria mandar uma mensagem, e aquela simples atitude mudou completamente nossas vidas.</p>
+                      <p>Antes mesmo de qualquer promessa, já sentindo um pequeno pedaço do que viria da conexão inesperada, veio a decisão: orar juntos.</p>
+                      <p>Em poucos dias, percebemos que compartilhamos muito mais do que gostos parecidos. Sonhamos parecido, acreditamos nas mesmas coisas, desejamos o mesmo futuro e carregamos os mesmos princípios no coração.</p>
+                      <p>Cada conversa se tornava mais longa. A oração nos fortalecia, a sinceridade nos aproximava e o cuidado conquistava diariamente. Entre chamadas de vídeo no fim do dia, estudos da Bíblia, risadas, perguntas profundas e planos para o futuro, fomos entendendo que o amor também nasce na amizade, na admiração e na presença constante.</p>
+                      <p>O primeiro encontro foi inesquecível. Parecia que o coração já reconhecia alguém que esperou por muito tempo. Cada abraço trouxe paz, cada olhar transmitia carinho e cada momento parecia confirmar aquilo que Deus já havia colocado em nossos corações.</p>
+                      <p>Hoje olhamos para trás com gratidão por cada detalhe da nossa caminhada. Nada foi por acaso. Deus conduziu nossa história com amor, propósito e cuidado.</p>
+                      <p>E agora, diante de uma nova etapa, seguimos escolhendo um ao outro todos os dias, construindo sonhos, fortalecendo nossa fé e colocando Deus sempre no centro de tudo aquilo que ainda iremos viver juntos.”</p>
                     </div>
                   </div>
                 </div>
