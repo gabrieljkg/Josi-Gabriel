@@ -280,7 +280,7 @@ const EditModal = ({
             {isUploading && <p className="text-xs text-blue-600 font-medium my-2">Fazendo upload das imagens...</p>}
             {formData.images && formData.images.length > 0 && (
               <div className="grid grid-cols-4 gap-2 mt-4">
-                {formData.images.map((img, idx) => (
+                 {formData.images.map((img, idx) => (
                   <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-blue-200 group">
                     <img src={img} alt="Preview" className="w-full h-full object-cover" />
                     <button 
@@ -290,7 +290,7 @@ const EditModal = ({
                       <X className="w-3 h-3" />
                     </button>
                   </div>
-                ))}
+                 ))}
               </div>
             )}
             {(!formData.images || formData.images.length === 0) && (
@@ -909,8 +909,8 @@ export default function App() {
               {activeSection === 'recados' && (
                 <div className="w-full max-w-4xl py-12 px-4">
                   <div className="text-center mb-12">
-                    <h2 className="text-4xl font-serif text-brand-ink mb-4">Deixe um Recado</h2>
-                    <p className="text-slate-700">Seu carinho em palavras significa muito para nós.</p>
+                     <h2 className="text-4xl font-serif text-brand-ink mb-4">Deixe um Recado</h2>
+                     <p className="text-slate-700">Seu carinho em palavras significa muito para nós.</p>
                   </div>
 
                   <div className="grid md:grid-cols-5 gap-12">
