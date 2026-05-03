@@ -25,8 +25,6 @@ import {
   ChevronRight,
   Trash2
 } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
-
 import { supabase } from './lib/supabase';
 
 // --- Types ---
@@ -117,7 +115,6 @@ function generatePixPayload(price?: number) {
   
   return payload + crcHex;
 }
-
 const WEDDING_DATE = new Date('2026-08-13T20:00:00');
 
 // --- Components ---
@@ -164,22 +161,45 @@ const EditModal = ({
     category: 'Geral',
     isReserved: false
   });
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []) as File[];
     if (files.length > 0) {
-      Promise.all(
-        files.map(file => new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(file);
-        }))
-      ).then(newImages => {
-        setFormData(prev => ({ 
-          ...prev, 
-          images: [...(prev.images || []), ...newImages].filter(Boolean)
-        }));
-      });
+      setIsUploading(true);
+      try {
+        const uploadedUrls: string[] = [];
+        for (const file of files) {
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+          const filePath = `${fileName}`;
+
+          const { data, error } = await supabase.storage
+            .from('gifts')
+            .upload(filePath, file);
+
+          if (error) {
+            console.error("Erro ao fazer upload da imagem:", error);
+          } else if (data) {
+            const { data: publicUrlData } = supabase.storage
+              .from('gifts')
+              .getPublicUrl(data.path);
+            
+            uploadedUrls.push(publicUrlData.publicUrl);
+          }
+        }
+        
+        if (uploadedUrls.length > 0) {
+          setFormData(prev => ({ 
+            ...prev, 
+            images: [...(prev.images || []), ...uploadedUrls].filter(Boolean)
+          }));
+        }
+      } catch (err) {
+        console.error("Error uploading image:", err);
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -272,11 +292,13 @@ const EditModal = ({
               type="file"
               accept="image/*"
               multiple
-              className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 outline-none transition-colors mb-2"
+              disabled={isUploading}
+              className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 outline-none transition-colors mb-2 disabled:opacity-50"
               onChange={handleImageChange}
             />
+            {isUploading && <p className="text-xs text-blue-600 font-medium my-2">Fazendo upload das imagens...</p>}
             {formData.images && formData.images.length > 0 && (
-              <div className="grid grid-cols-4 gap-2 mt-4">
+               <div className="grid grid-cols-4 gap-2 mt-4">
                 {formData.images.map((img, idx) => (
                   <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-blue-200 group">
                     <img src={img} alt="Preview" className="w-full h-full object-cover" />
@@ -466,6 +488,8 @@ const PixModal = ({
   );
 };
 
+// Supabase Client Imported Above
+
 export default function App() {
   const [activeSection, setActiveSection] = useState('inicio');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -484,8 +508,19 @@ export default function App() {
         if (giftsError) {
           console.error("Erro ao buscar presentes do Supabase:", giftsError);
         } else if (giftsData && giftsData.length > 0) {
-          setGifts(giftsData as GiftItem[]);
-          localStorage.setItem('wedding_gifts', JSON.stringify(giftsData));
+          const formattedGifts = giftsData.map((g: any) => ({
+            id: g.id,
+            name: g.name,
+            description: g.description,
+            price: g.price,
+            image: g.image,
+            images: g.images,
+            category: g.category,
+            isReserved: g.is_reserved || g.isReserved || false,
+            reservedBy: g.reserved_by || g.reservedBy
+          }));
+          setGifts(formattedGifts as GiftItem[]);
+          localStorage.setItem('wedding_gifts', JSON.stringify(formattedGifts));
         }
         
         const { data: messagesData, error: messagesError } = await supabase.from('messages').select('*').order('created_at', { ascending: false });
@@ -550,6 +585,7 @@ export default function App() {
 
   // Automatically enable admin if user email matches
   useEffect(() => {
+    // In a real app, we'd check session/auth, here we use the provided email context
     if (adminEmails.includes(userEmail)) {
       setIsAdmin(true); 
     }
@@ -593,7 +629,17 @@ export default function App() {
       const updatedGift = { ...editingGift, ...data, image: finalImage } as GiftItem;
       setGifts(gifts.map(g => g.id === editingGift.id ? updatedGift : g));
       try {
-        await supabase.from('gifts').update(updatedGift).eq('id', editingGift.id);
+        const { error } = await supabase.from('gifts').update({
+          name: updatedGift.name,
+          description: updatedGift.description,
+          price: updatedGift.price,
+          image: updatedGift.image,
+          images: updatedGift.images,
+          category: updatedGift.category,
+          is_reserved: updatedGift.isReserved,
+          reserved_by: updatedGift.reservedBy
+        }).eq('id', editingGift.id);
+        if (error) console.error("Erro no Supabase update:", error);
       } catch (e) {
         console.error("Erro ao atualizar Supabase", e);
       }
@@ -610,7 +656,18 @@ export default function App() {
       };
       setGifts([...gifts, newGift]);
       try {
-        await supabase.from('gifts').insert([newGift]);
+        const { error } = await supabase.from('gifts').insert([{
+          id: newGift.id,
+          name: newGift.name,
+          description: newGift.description,
+          price: newGift.price,
+          image: newGift.image,
+          images: newGift.images,
+          category: newGift.category,
+          is_reserved: newGift.isReserved,
+          reserved_by: newGift.reservedBy
+        }]);
+        if (error) console.error("Erro no Supabase insert:", error);
       } catch (e) {
         console.error("Erro ao inserir no Supabase", e);
       }
@@ -625,7 +682,8 @@ export default function App() {
         const updatedGifts = gifts.map(g => g.id === selectedItem.id ? { ...g, isReserved: true, reservedBy: name } : g);
         setGifts(updatedGifts);
         try {
-          await supabase.from('gifts').update({ isReserved: true, reservedBy: name }).eq('id', selectedItem.id);
+          const { error } = await supabase.from('gifts').update({ is_reserved: true, reserved_by: name }).eq('id', selectedItem.id);
+          if (error) console.error("Erro ao reservar:", error);
         } catch (e) {
           console.error("Erro ao reservar no Supabase", e);
         }
@@ -639,7 +697,8 @@ export default function App() {
     const updatedGifts = gifts.map(g => g.id === id ? { ...g, isReserved: false, reservedBy: undefined } : g);
     setGifts(updatedGifts);
     try {
-      await supabase.from('gifts').update({ isReserved: false, reservedBy: null }).eq('id', id);
+      const { error } = await supabase.from('gifts').update({ is_reserved: false, reserved_by: null }).eq('id', id);
+      if (error) console.error("Erro ao cancelar:", error);
     } catch (e) {
       console.error("Erro ao cancelar reserva no Supabase", e);
     }
@@ -932,9 +991,9 @@ export default function App() {
                       )}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+                  <div className="flex flex-wrap justify-center gap-12">
                      {gifts.map((item, idx) => (
-                        <div key={item.id} className={`group flex flex-col ${item.isReserved ? 'opacity-40' : ''}`}>
+                        <div key={item.id} className={`group flex flex-col w-full sm:w-[calc(50%-24px)] lg:w-[calc(33.333%-32px)] max-w-sm ${item.isReserved ? 'opacity-40' : ''}`}>
                            <Polaroid 
                              className="w-full aspect-square mb-6 p-2 pb-10 transition-transform group-hover:scale-105 group-hover:rotate-1" 
                              image={item.image}
