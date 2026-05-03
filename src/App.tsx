@@ -78,7 +78,6 @@ const INITIAL_GIFTS: GiftItem[] = [
 ];
 
 const PIX_KEY = "63992613726";
-const PIX_BASE_PAYLOAD = "00020126360014br.gov.bcb.pix0114+55639926137265204000053039865802BR5925JOSIVANIA PEREIRA DOS SAN6009Sao Paulo62290525REC69F28A22A95C23595148686";
 
 function generatePixPayload(price?: number) {
   const base = "000201";
@@ -298,7 +297,7 @@ const EditModal = ({
             />
             {isUploading && <p className="text-xs text-blue-600 font-medium my-2">Fazendo upload das imagens...</p>}
             {formData.images && formData.images.length > 0 && (
-               <div className="grid grid-cols-4 gap-2 mt-4">
+              <div className="grid grid-cols-4 gap-2 mt-4">
                 {formData.images.map((img, idx) => (
                   <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-blue-200 group">
                     <img src={img} alt="Preview" className="w-full h-full object-cover" />
@@ -418,7 +417,7 @@ const PixModal = ({
                         level="H"
                         includeMargin={false}
                         imageSettings={{
-                          src: "https://github.com/lucide-react/lucide/raw/main/icons/user.png", // Generic logo placeholder that looks like the one in the middle
+                          src: "https://github.com/lucide-react/lucide/raw/main/icons/user.png",
                           x: undefined,
                           y: undefined,
                           height: 30,
@@ -488,8 +487,6 @@ const PixModal = ({
   );
 };
 
-// Supabase Client Imported Above
-
 export default function App() {
   const [activeSection, setActiveSection] = useState('inicio');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -508,17 +505,39 @@ export default function App() {
         if (giftsError) {
           console.error("Erro ao buscar presentes do Supabase:", giftsError);
         } else if (giftsData && giftsData.length > 0) {
-          const formattedGifts = giftsData.map((g: any) => ({
-            id: g.id,
-            name: g.name,
-            description: g.description,
-            price: g.price,
-            image: g.image,
-            images: g.images,
-            category: g.category,
-            isReserved: g.is_reserved || g.isReserved || false,
-            reservedBy: g.reserved_by || g.reservedBy
-          }));
+          console.log("Dados recebidos do Supabase (gifts):", giftsData);
+          
+          const formattedGifts = giftsData.map((g: any) => {
+            // Ajustar a URL da imagem caso não comece com http
+            let imgUrl = g.image;
+            if (imgUrl && !imgUrl.startsWith('http') && !imgUrl.startsWith('data:')) {
+               const { data: publicUrlData } = supabase.storage.from('gifts').getPublicUrl(imgUrl);
+               imgUrl = publicUrlData.publicUrl;
+            }
+
+            let imgs = g.images;
+            if (imgs && Array.isArray(imgs)) {
+               imgs = imgs.map((img: string) => {
+                 if (img && !img.startsWith('http') && !img.startsWith('data:')) {
+                    const { data: publicUrlData } = supabase.storage.from('gifts').getPublicUrl(img);
+                    return publicUrlData.publicUrl;
+                 }
+                 return img;
+               });
+            }
+
+            return {
+              id: g.id,
+              name: g.name,
+              description: g.description,
+              price: g.price,
+              image: imgUrl,
+              images: imgs,
+              category: g.category,
+              isReserved: g.is_reserved || g.isReserved || false,
+              reservedBy: g.reserved_by || g.reservedBy
+            };
+          });
           setGifts(formattedGifts as GiftItem[]);
           localStorage.setItem('wedding_gifts', JSON.stringify(formattedGifts));
         }
@@ -527,7 +546,6 @@ export default function App() {
         if (messagesError) {
           console.error("Erro ao buscar recados do Supabase:", messagesError);
         } else if (messagesData && messagesData.length > 0) {
-          // Map snake_case to camelCase if needed, but here we just align with GuestMessage
           const formattedMessages = messagesData.map((m: any) => ({
             id: m.id,
             name: m.name,
@@ -580,12 +598,10 @@ export default function App() {
   });
   const [messageForm, setMessageForm] = useState({ name: '', message: '' });
 
-  const userEmail = "gabrielcalid@gmail.com"; // User's email from metadata
+  const userEmail = "gabrielcalid@gmail.com";
   const adminEmails = ["gabrielcalid@gmail.com", "josi.bio21@gmail.com"];
 
-  // Automatically enable admin if user email matches
   useEffect(() => {
-    // In a real app, we'd check session/auth, here we use the provided email context
     if (adminEmails.includes(userEmail)) {
       setIsAdmin(true); 
     }
@@ -789,7 +805,6 @@ export default function App() {
   return (
     <div className="min-h-screen bg-brand-cream relative selection:bg-brand-gold selection:text-white overflow-x-hidden font-sans text-gray-600">
       
-      {/* Background Decorations removed as requested */}
       <div className="relative flex min-h-screen z-10">
         
         {/* --- Sidebar Navigation --- */}
@@ -863,7 +878,7 @@ export default function App() {
               {activeSection === 'inicio' && (
                 <div className="flex flex-col items-center space-y-12 max-w-2xl text-center px-4 mb-20 mt-4">
                   <div className="py-8">
-                    <p className="text-2xl md:text-3xl font-melinda text-blue-900 leading-relaxed max-w-xl mx-auto">
+                     <p className="text-2xl md:text-3xl font-melinda text-blue-900 leading-relaxed max-w-xl mx-auto">
                       "Onde quer que tu fores, irei eu; e onde quer que pousares à noite, ali pousarei eu; o teu povo será o meu povo, e o teu Deus o meu Deus."
                     </p>
                     <p className="mt-6 tracking-widest uppercase text-xs text-brand-gold font-bold">Rute 1:16</p>
@@ -906,8 +921,8 @@ export default function App() {
               {activeSection === 'recados' && (
                 <div className="w-full max-w-4xl py-12 px-4">
                   <div className="text-center mb-12">
-                    <h2 className="text-4xl font-serif text-brand-ink mb-4">Deixe um Recado</h2>
-                    <p className="text-slate-700">Seu carinho em palavras significa muito para nós.</p>
+                     <h2 className="text-4xl font-serif text-brand-ink mb-4">Deixe um Recado</h2>
+                     <p className="text-slate-700">Seu carinho em palavras significa muito para nós.</p>
                   </div>
 
                   <div className="grid md:grid-cols-5 gap-12">
